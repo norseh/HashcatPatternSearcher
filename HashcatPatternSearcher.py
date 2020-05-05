@@ -1,8 +1,6 @@
 import re
 import itertools
 
-# contém bugs (lista com itens duplicados, triplicados, etc pela quantidade de acontecimentos
-
 # Hashcat groups for masks:
 #?l = abcdefghijklmnopqrstuvwxyz
 #?u = ABCDEFGHIJKLMNOPQRSTUVWXYZ
@@ -13,13 +11,7 @@ import itertools
 #?a = ?l?u?d?s
 #?b = 0x00 - 0xff
 
-# Ideia
-# foco em l, u, d, h, H e s
-# Abrir tabela binária para cada letra de cada senha
-# Montar todos os padrões encontrados por palavra
-# Somar o número de cada acontecimento de novo padrão encontrado
-
-# Exemplo de complexidade
+# Example of complexity
 #
 # |Dead1234
 # |____________
@@ -57,25 +49,26 @@ import itertools
 # |ullhHHHH
 # |HllhHHHH
 
-#Treino rockyou
-
+#Trainning rockyou after strings in file
 
 
 class Mask:
   def __init__(self, mask, count):
     self.mask = mask
     self.count = count
+    self.length = 0
 
-def HashcatPatternSearcher(wordlist):
+def HashcatPatternSearcher(wordlist, minimum, debug):
 
-    print(wordlist)
+    if debug == True:
+        print(wordlist)
     masks = []
     masks.append(Mask("('d')", 1))
 
     for word in wordlist:
         length = int(len(word))-1
-        print("Word: ", word)
-        print("Length: ", length)
+        if debug == True:
+            print("Password: ", word, "Length: ", length)
         word_matrix = []
         for char in range(0, length):
             char_matrix = []
@@ -101,11 +94,13 @@ def HashcatPatternSearcher(wordlist):
                 char_matrix = ['H']
 
             word_matrix.append(char_matrix)
-        print("Masks: ", word_matrix)
-        print()
+        if debug == True:
+            print("Reduced mask: ", word_matrix)
 
         iterations = list(itertools.product(*word_matrix))
-        print(sum(map(len, iterations)), "iterations")
+        if debug == True:
+            print(sum(map(len, iterations)), "iterations")
+            print("")
 
         for subset in iterations:
             mask_temp = Mask(subset, 1)
@@ -114,6 +109,17 @@ def HashcatPatternSearcher(wordlist):
                     i.count = i.count+1
             else:
                 masks.append(mask_temp)
-    newlist = sorted(masks, key=lambda x: x.count, reverse=False)
-    for x in newlist:
-        print(x.mask, x.count)
+
+    uniquemasks = set(mascara.mask for mascara in masks)
+    bestmasks = []
+    highercountmask = Mask([''], 0)
+    for i in uniquemasks:
+        #print(len(uniquemasks), i)
+        counter = 0
+        for j in masks:
+            if j.mask == i:
+                counter = counter+1
+        highercountmask = Mask(i, counter)
+        bestmasks.append(highercountmask)
+    
+    return(bestmasks)
